@@ -5,6 +5,7 @@ Yara-Scanner is a Python-based Yara scanner intergrated into Burp Suite. Yara-Sc
 
 ### Prerequisite: Jython
 If you have not already added a Jython standalone JAR file to Burp:
+
 1. Download the latest version (2.7) of the Jython standalone JAR file from: http://www.jython.org/downloads.html
 2. In Burp, go to the Extender tab, then Options
 3. Under Python Environment, click Select file... next to the field for Location of Jython standalone JAR file
