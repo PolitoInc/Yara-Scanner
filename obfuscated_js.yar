@@ -13,6 +13,5 @@ rule obfuscated_js
 	  $c = "\\x"
 	  $d = ".fromCharCode"
    condition:
-      $a or (#b > 20 or #c > 20 or $d)
+      $a and (#b > 20 or #c > 20 or $d)
 }
-
