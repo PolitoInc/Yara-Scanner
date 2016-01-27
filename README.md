@@ -22,19 +22,20 @@ If you have not already added a Jython standalone JAR file to Burp:
 4. Under Extension details, set Extension type to Python
 5. Click Select file...  next to the Extension file (.py) field 
 6. Select your downloaded copy of yaraburp.py and click Open, then Next
-7. In the Load Burp Extension window, after a few seconds the Output box should display "Burpsuite Yara scanner initialized", indicating that it was successfully loaded the Yara tab in Burp and is ready for use. Click Close
-8. Ensure that the Loaded option is checked for Burpsuite Yara Scanner 
+7. In the Load Burp Extension window, after a few seconds the Output box should display "Burpsuite Yara scanner initialized", indicating that it was successfully loaded. A Yara tab will appear in Burp and Yara Scanner is now ready to use. Click Close.
+8. Ensure that the Loaded option box is checked for Burpsuite Yara Scanner 
 
 ### How to Use
 1. Click the Yara tab in Burp, then Options
-2. Enter the full path of your Yara Executable Location (example: C:\Users\User\Downloads\Yara\yara32.exe)
-3. Enter your Yara Rules File path (example: C:\Users\User\Downloads\Yara\rules.txt). A sample rule file can be downloaded from this repository, though you are encouraged to write and test your own Yara rules.
-4. Visit your target site(s) using Burp as an interception proxy and your browser of choice
+2. Enter the full path of your Yara executable Location (example: C:\Users\User\Downloads\Yara\yara32.exe)
+3. Enter your Yara Rules File path (example: C:\Users\User\Downloads\Yara\rules.txt). A sample rule file for obfuscated JS detection can be downloaded from this repository, though you are encouraged to write and test your own Yara rules.
+4. Visit your target site(s) using Burp as an interception proxy and your browser of choice to populate Burp's Site map
 5. In Burp's Target tab, in the Site map, select the site(s) you want to scan with Yara then right-click on them and select Scan with Yara
-6. After the Yara scan has successfully completed, a "Yara scanning complete." message will appear. Click OK.
+6. After the Yara scan has successfully completed, a "Yara scanning complete" message will appear. Click OK.
 7. Click on the Yara tab and select Yara Output to view the rule hits; the Rule Name and URL will be listed for each hit.
 
 ### Possible Roadmap
-* Threading Yara to improve performance
-* Active scanning with Yara
-* Persistent settings
+* Ensure compatibility with Linux
+* Add threading for Yara to improve performance
+* Add active scanning with Yara
+* Add persistent settings
