@@ -40,4 +40,4 @@ If you have not already added a Jython standalone JAR file to Burp:
 * Add active scanning with Yara
 * Add persistent settings
 * DONE Add threading for Yara to improve performance
-* DONE Add clear table results button
+* DONE Add "Clear Yara Results Table" button in Options
