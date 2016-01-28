@@ -31,6 +31,7 @@ If you have not already added a Jython standalone JAR file to Burp:
 3. Enter your Yara Rules File path (example: C:\Users\User\Downloads\Yara\rules.txt). A sample rule file for obfuscated JS detection can be downloaded from this repository, though you are encouraged to write and test your own Yara rules.
 4. Visit your target site(s) using Burp as an interception proxy and your browser of choice to populate Burp's Site map
 5. In Burp's Target tab, in the Site map, select the site(s) you want to scan with Yara then right-click on them and select Scan with Yara
+ *  IMPORTANT NOTE: if you select a domain in the site map without expanding it, and select "scan with yara" it won't scan everything under that site. For some reason the Burp API does not include everything underneath that domain. You have to expand and select all of the sub-items in the tree structure under that domain and THEN select "scan with yara" to get everything.
 6. After the Yara scan has successfully completed, a "Yara scanning complete" message will appear. Click OK.
 7. Click on the Yara tab and select Yara Output to view the rule hits; the Rule Name and URL will be listed for each hit.
 
