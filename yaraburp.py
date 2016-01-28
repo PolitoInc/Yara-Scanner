@@ -1,3 +1,11 @@
+#!/usr/bin/python
+# coding: utf-8
+
+#
+# Yara scanner plugin for Burpsuite
+# Copyright 2016, Polito, Inc. All Rights Reserved.
+#
+
 __author__ = 'Ian'
 
 from burp import IBurpExtender
@@ -5,10 +13,13 @@ from burp import IContextMenuFactory
 from burp import ITab
 from burp import IMessageEditorController
 from java.io import PrintWriter
+from java.lang import Runnable
+from java.lang import Thread
 from java.util import ArrayList
 from java.awt import GridBagConstraints
 from java.awt import GridBagLayout
 from java.awt.event import ActionListener
+from javax.swing import JButton
 from javax.swing import JLabel
 from javax.swing import JMenuItem
 from javax.swing import JOptionPane
@@ -20,20 +31,20 @@ from javax.swing import JTable
 from javax.swing import JTextField
 from javax.swing.table import AbstractTableModel
 from threading import Lock
-import subprocess
 import os
+import subprocess
 
-# TODO: Provide a mechanism to allow the user to specify the location of the yara executable and rules
+# Global variables
 yara_path = None
 yara_rules = None
 stdout = None
 
 
 class BurpExtender(IBurpExtender, ITab, IMessageEditorController, IContextMenuFactory, ActionListener,
-                   AbstractTableModel):
+                   AbstractTableModel, Runnable):
 
     #
-    # implement IBurpExtender
+    # Implement IBurpExtender
     #
     def registerExtenderCallbacks(self, callbacks):
         # Initialize the global stdout stream
@@ -89,6 +100,13 @@ class BurpExtender(IBurpExtender, ITab, IMessageEditorController, IContextMenuFa
         constraints.gridy = 1
         optionsPanel.add(self._yara_rules_txtField, constraints)
 
+        self._yara_clear_button = JButton("Clear Yara Results Table")
+        self._yara_clear_button.addActionListener(self)
+        constraints.fill = GridBagConstraints.HORIZONTAL
+        constraints.gridx = 1
+        constraints.gridy = 2
+        optionsPanel.add(self._yara_clear_button, constraints)
+
         # Tabs with request/response viewers
         viewerTabs = JTabbedPane()
         self._requestViewer = callbacks.createMessageEditor(self, False)
@@ -126,7 +144,7 @@ class BurpExtender(IBurpExtender, ITab, IMessageEditorController, IContextMenuFa
         stdout.println("Burpsuite Yara scanner initialized.")
 
     #
-    # implement ITab
+    # Implement ITab
     #
     def getTabCaption(self):
         return "Yara"
@@ -152,13 +170,36 @@ class BurpExtender(IBurpExtender, ITab, IMessageEditorController, IContextMenuFa
         global yara_rules
         global yara_path
 
-        yara_path = self._yara_exe_txtField.getText()
-        yara_rules = self._yara_rules_txtField.getText()
+        if actionEvent.getSource() is self.menuItem:
+            yara_path = self._yara_exe_txtField.getText()
+            yara_rules = self._yara_rules_txtField.getText()
+            t = Thread(self)
+            t.start()
+        elif actionEvent.getSource() is self._yara_clear_button:
+            # Delete the LogEntry objects from the log
+            row = self._log.size()
+            self._lock.acquire()
+            self._log.clear()
 
+            # Update the Table
+            self.fireTableRowsDeleted(0, row)
+
+            # Clear data regarding any selected LogEntry objects from the request / response viewers
+            self._requestViewer.setMessage([], True)
+            self._responseViewer.setMessage([], False)
+            self._currentlyDisplayedItem = None
+            self._lock.release()
+        else:
+            stdout.println("Unknown Event Received.")
+
+    #
+    # Implement Runnable
+    #
+    def run(self):
         self.yaraScan()
 
     #
-    # extend AbstractTableModel
+    # Extend AbstractTableModel
     #
     def getRowCount(self):
         try:
@@ -185,7 +226,7 @@ class BurpExtender(IBurpExtender, ITab, IMessageEditorController, IContextMenuFa
         return ""
 
     #
-    # implement IMessageEditorController
+    # Implement IMessageEditorController
     # this allows our request/response viewers to obtain details about the messages being displayed
     #
 
@@ -217,7 +258,7 @@ class BurpExtender(IBurpExtender, ITab, IMessageEditorController, IContextMenuFa
             JOptionPane.showMessageDialog(None, "Error: No Request/Responses were selected.")
             return
         else:
-            stdout.println("Processing %d items." % len(self.requestResponses))
+            stdout.println("Processing %d item(s)." % len(self.requestResponses))
 
         # Get the OS temp folder
         temp_folder = os.environ.get("TEMP")
@@ -227,55 +268,71 @@ class BurpExtender(IBurpExtender, ITab, IMessageEditorController, IContextMenuFa
             stdout.println("Error: Could not determine TEMP folder location.")
             return
 
+        # Keep track of the number of matches.
+        matchCount = 0
+
         # Process the site map selected messages
         for idx, iRequestResponse in enumerate(self.requestResponses):
             # Process the request
             request = iRequestResponse.getRequest()
             if request is not None:
                 if len(request) > 0:
-                    # Yara does not support scanning from stdin so we will need to create a temp file and scan it
-                    req_filename = os.path.join(temp_folder, "req_" + str(idx) + ".tmp")
-                    req_file = open(req_filename, "wb")
-                    req_file.write(request)
-                    req_file.close()
-                    yara_req_output = subprocess.check_output([yara_path, yara_rules, req_filename])
-                    if yara_req_output is not None and len(yara_req_output) > 0:
-                        ruleName = (yara_req_output.split())[0]
-                        self._lock.acquire()
-                        row = self._log.size()
-                        # TODO: Don't add duplicate items to the table
-                        self._log.add(LogEntry(ruleName, iRequestResponse, self._helpers.analyzeRequest(iRequestResponse).getUrl()))
-                        self.fireTableRowsInserted(row, row)
-                        self._lock.release()
-
-                    # Remove the temp file
-                    os.remove(req_filename)
+                    try:
+                        # Yara does not support scanning from stdin so we will need to create a temp file and scan it
+                        req_filename = os.path.join(temp_folder, "req_" + str(idx) + ".tmp")
+                        req_file = open(req_filename, "wb")
+                        req_file.write(request)
+                        req_file.close()
+                        yara_req_output = subprocess.check_output([yara_path, yara_rules, req_filename])
+                        if yara_req_output is not None and len(yara_req_output) > 0:
+                            ruleName = (yara_req_output.split())[0]
+                            self._lock.acquire()
+                            row = self._log.size()
+                            # TODO: Don't add duplicate items to the table
+                            self._log.add(LogEntry(ruleName, iRequestResponse, self._helpers.analyzeRequest(iRequestResponse).getUrl()))
+                            self.fireTableRowsInserted(row, row)
+                            self._lock.release()
+                            matchCount += 1
+                    except Exception as e:
+                        JOptionPane.showMessageDialog(None, "Error running Yara. Please check your configuration and rules.")
+                        return
+                    finally:
+                        # Remove the temp file
+                        if req_file is not None:
+                            req_file.close()
+                        os.remove(req_filename)
 
             # Process the response
             response = iRequestResponse.getResponse()
             if response is not None:
                 if len(response) > 0:
-                    # Yara does not support scanning from stdin so we will need to create a temp file and scan it
-                    resp_filename = os.path.join(temp_folder, "resp_" + str(idx) + ".tmp")
-                    resp_file = open(resp_filename, "wb")
-                    resp_file.write(response)
-                    resp_file.close()
-                    yara_resp_output = subprocess.check_output([yara_path, yara_rules, resp_file.name])
-                    if yara_resp_output is not None and len(yara_resp_output) > 0:
-                        #stdout.println(yara_resp_output.strip())
-                        ruleName = (yara_resp_output.split())[0]
-                        self._lock.acquire()
-                        row = self._log.size()
-                        # TODO: Don't add duplicate items to the table
-                        self._log.add(LogEntry(ruleName, iRequestResponse, self._helpers.analyzeRequest(iRequestResponse).getUrl()))
-                        self.fireTableRowsInserted(row, row)
-                        self._lock.release()
-
-                    # Remove the temp file
-                    os.remove(resp_filename)
+                    try:
+                        # Yara does not support scanning from stdin so we will need to create a temp file and scan it
+                        resp_filename = os.path.join(temp_folder, "resp_" + str(idx) + ".tmp")
+                        resp_file = open(resp_filename, "wb")
+                        resp_file.write(response)
+                        resp_file.close()
+                        yara_resp_output = subprocess.check_output([yara_path, yara_rules, resp_filename])
+                        if yara_resp_output is not None and len(yara_resp_output) > 0:
+                            ruleName = (yara_resp_output.split())[0]
+                            self._lock.acquire()
+                            row = self._log.size()
+                            # TODO: Don't add duplicate items to the table
+                            self._log.add(LogEntry(ruleName, iRequestResponse, self._helpers.analyzeRequest(iRequestResponse).getUrl()))
+                            self.fireTableRowsInserted(row, row)
+                            self._lock.release()
+                            matchCount += 1
+                    except Exception as e:
+                        JOptionPane.showMessageDialog(None, "Error running Yara. Please check your configuration and rules.")
+                        return
+                    finally:
+                        # Remove the temp file
+                        if resp_file is not None:
+                            resp_file.close()
+                        os.remove(resp_filename)
 
         # Print a completion notification
-        JOptionPane.showMessageDialog(None, "Yara scanning complete.")
+        JOptionPane.showMessageDialog(None, "Yara scanning complete. %d rule(s) matched." % matchCount)
 
 
 class Table(JTable):
@@ -296,7 +353,6 @@ class Table(JTable):
         JTable.changeSelection(self, row, col, toggle, extend)
         return
 
-# TODO: Consider adding the name of the rule that hit
 class LogEntry:
     def __init__(self, ruleName, requestResponse, url):
         self._ruleName = ruleName
