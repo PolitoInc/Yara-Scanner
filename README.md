@@ -39,5 +39,6 @@ If you have not already added a Jython standalone JAR file to Burp:
 * Ensure compatibility with Linux
 * Add active scanning with Yara
 * Add persistent settings
+* Allow for multiple rule files, instead of requiring all rules to be within a single file
 * DONE Add threading for Yara to improve performance
 * DONE Add "Clear Yara Results Table" button in Options
