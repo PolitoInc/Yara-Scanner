@@ -14,6 +14,7 @@ from burp import ITab
 from burp import IMessageEditorController
 from java.io import PrintWriter
 from java.lang import Runnable
+from java.lang import System
 from java.lang import Thread
 from java.util import ArrayList
 from java.awt import GridBagConstraints
@@ -261,9 +262,16 @@ class BurpExtender(IBurpExtender, ITab, IMessageEditorController, IContextMenuFa
             stdout.println("Processing %d item(s)." % len(self.requestResponses))
 
         # Get the OS temp folder
-        temp_folder = os.environ.get("TEMP")
-        if temp_folder is None:
-            temp_folder = os.environ.get("TMP")
+        os_name = System.getProperty("os.name").lower()
+
+        temp_folder = None
+        if "linux" in os_name:
+            temp_folder = "/tmp"
+        elif "windows" in os_name:
+            temp_folder = os.environ.get("TEMP")
+            if temp_folder is None:
+                temp_folder = os.environ.get("TMP")
+
         if temp_folder is None:
             stdout.println("Error: Could not determine TEMP folder location.")
             return
