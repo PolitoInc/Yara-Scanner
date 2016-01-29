@@ -1,9 +1,10 @@
 rule req_test
 {
     meta:
-        description = "request test"
+        description = "a very simple example rule that should generate request matches for testing purposes; feel free to modify"
     strings:
         $a = "GET"
+        $b = "POST"
     condition:
-        $a
+        $a or $b
 }
