@@ -1,7 +1,7 @@
 ## Yara-Scanner
 
 ### Introduction
-Yara-Scanner is a Python-based extension that integrates a Yara scanner into Burp Suite. Yara-Scanner allows you perform on-demand Yara scans of websites within the Burp interface, based on custom Yara rules that you write or obtain. Example use cases include scanning spidered sites for obfuscated Javascript or any other specific string patterns of interest present in any part of a request or response. It has been tested with Yara 3.4 32-bit and 64-bit in Burp Suite Free and Pro versions 1.6.3x on Windows 7 and 10, and Kali 2.0.
+Yara-Scanner is a Python-based extension that integrates a Yara scanner into Burp Suite. Yara-Scanner allows you perform on-demand Yara scans of websites within the Burp interface, based on custom Yara rules that you write or obtain. Example use cases include scanning spidered sites for obfuscated Javascript or any other specific string patterns of interest present in any part of a request or response. It has been tested with Yara 3.4 in Burp Suite Free and Pro versions 1.6.3x on Windows 7 and 10, and Kali 2.0.
 
 ### Prerequisite: Jython
 If you have not already added a Jython standalone JAR file to Burp:
@@ -12,8 +12,7 @@ If you have not already added a Jython standalone JAR file to Burp:
 4. Select your downloaded jython-standalone-2.7.0.jar file and click Open
 
 ### Prerequisite: Yara
-1. Download the latest version of the standalone Yara binary (3.4) for your OS from: https://github.com/plusvic/yara/releases/tag/v3.4.0. Either the 32-bit or 64-bit version of the Yara binary should work fine.
-2. Unzip the contents of yara-3.4.0-win32.zip in a directory you will remember
+1. Install or download the latest version of the standalone Yara binary (3.4) for your OS. Instructions at:  https://github.com/plusvic/yara/releases/tag/v3.4.0. 
 
 ### How to Install
 1. Download yaraburp.py
@@ -28,11 +27,11 @@ If you have not already added a Jython standalone JAR file to Burp:
 ### How to Use
 1. Click the Yara tab in Burp, then Options
 2. Enter the full path of your Yara Executable Location
-  * Windows example path: C:\Users\User\Downloads\Yara\yara32.exe
+  * Windows example: C:\Users\User\Downloads\Yara\yara32.exe
   * Linux example: /usr/bin/yara
 3. Enter your Yara Rules File path 
-  * Windows example path: C:\Users\User\Downloads\Yara\rules.yar
-  * Linux example path: /user/Downloads/rules.yar
+  * Windows example: C:\Users\User\Downloads\Yara\rules.yar
+  * Linux example: /user/Downloads/rules.yar
   * Among other Yara rule examples, a sample rule file for obfuscated JS detection can be downloaded from this repository, though you are encouraged to write and test your own Yara rules.
 4. Visit your target site(s) using Burp as an interception proxy and your browser of choice to populate Burp's Site map
 5. In Burp's Target tab, in the Site map, select the site(s) you want to scan with Yara then right-click on them and select Scan with Yara
