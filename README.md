@@ -12,7 +12,7 @@ If you have not already added a Jython standalone JAR file to Burp:
 4. Select your downloaded jython-standalone-2.7.0.jar file and click Open
 
 ### Prerequisite: Yara
-1. Download the latest Windows version of the standalone Yara binary (3.4) from: https://github.com/plusvic/yara/releases/tag/v3.4.0. Direct download link: https://b161268c3bf5a87bc67309e7c870820f5f39f672.googledrive.com/host/0BznOMqZ9f3VUek8yN3VvSGdhRFU/yara-3.4.0-win32.zip
+1. Download the latest version of the standalone Yara binary (3.4) for your OS from: https://github.com/plusvic/yara/releases/tag/v3.4.0. Either the 32-bit or 64-bit version of the Yara binary should work fine.
 2. Unzip the contents of yara-3.4.0-win32.zip in a directory you will remember
 
 ### How to Install
@@ -23,12 +23,17 @@ If you have not already added a Jython standalone JAR file to Burp:
 5. Click Select file...  next to the Extension file (.py) field 
 6. Select your downloaded copy of yaraburp.py and click Open, then Next
 7. In the Load Burp Extension window, after a few seconds the Output box should display "Burpsuite Yara scanner initialized", indicating that it was successfully loaded. A Yara tab will appear in Burp and Yara Scanner is now ready to use. Click Close.
-8. Ensure that the Loaded option box is checked for Burpsuite Yara Scanner 
+8. Ensure that the Loaded option box is now checked for Burpsuite Yara Scanner 
 
 ### How to Use
 1. Click the Yara tab in Burp, then Options
-2. Enter the full path of your Yara executable Location (example: C:\Users\User\Downloads\Yara\yara32.exe)
-3. Enter your Yara Rules File path (example: C:\Users\User\Downloads\Yara\rules.txt). A sample rule file for obfuscated JS detection can be downloaded from this repository, though you are encouraged to write and test your own Yara rules.
+2. Enter the full path of your Yara Executable Location
+  * Windows example path: C:\Users\User\Downloads\Yara\yara32.exe
+  * Linux example: /usr/bin/yara
+3. Enter your Yara Rules File path 
+  * Windows example path: C:\Users\User\Downloads\Yara\rules.yar
+  * Linux example path: /user/Downloads/rules.yar
+  * Among other Yara rule examples, a sample rule file for obfuscated JS detection can be downloaded from this repository, though you are encouraged to write and test your own Yara rules.
 4. Visit your target site(s) using Burp as an interception proxy and your browser of choice to populate Burp's Site map
 5. In Burp's Target tab, in the Site map, select the site(s) you want to scan with Yara then right-click on them and select Scan with Yara
  *  IMPORTANT NOTE: if you select a domain in the site map without expanding it, and select "Scan with Yara", it won't scan everything under that site. For some reason the Burp API does not include everything underneath that domain. You have to expand and select all of the sub-items in the tree structure under that domain and THEN select "Scan with Yara" to get everything.
