@@ -1,10 +1,10 @@
 rule resp_test
 {
     meta:
-        description = "response test"
+        description = "simple example rule that should generate matches for responses for testing purposes; feel free to modify"
     strings:
-        $a = "html" nocase
-        $b = "Set-Cookie" nocase
+        $a = "Set-Cookie" nocase
+        $b = "html" nocase
         $c = "<script>" nocase
         $d = /\d+\.\d+\.\d+\.\d+/
     condition:
