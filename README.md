@@ -1,7 +1,7 @@
 ## Yara-Scanner
 
 ### Introduction
-Yara-Scanner is a Python-based extension that integrates a Yara scanner into Burp Suite. Yara-Scanner allows you perform on-demand Yara scans of websites within the Burp interface, based on custom Yara rules that you write or obtain. Example use cases include scanning spidered sites for obfuscated Javascript or any other specific string patterns of interest present in any part of a request or response. It has been tested with Yara 3.4 32-bit and 64-bit in Burp Suite Free and Pro versions 1.6.3x on Windows 7 and 10. Linux compatibility is in progress.
+Yara-Scanner is a Python-based extension that integrates a Yara scanner into Burp Suite. Yara-Scanner allows you perform on-demand Yara scans of websites within the Burp interface, based on custom Yara rules that you write or obtain. Example use cases include scanning spidered sites for obfuscated Javascript or any other specific string patterns of interest present in any part of a request or response. It has been tested with Yara 3.4 32-bit and 64-bit in Burp Suite Free and Pro versions 1.6.3x on Windows 7 and 10, and Kali 2.0.
 
 ### Prerequisite: Jython
 If you have not already added a Jython standalone JAR file to Burp:
@@ -36,9 +36,9 @@ If you have not already added a Jython standalone JAR file to Burp:
 7. Click on the Yara tab and select Yara Output to view the rule hits; the Rule Name and URL will be listed for each hit.
 
 ### Possible Roadmap
-* Ensure compatibility with Linux
 * Add active scanning with Yara
 * Add persistent settings
 * Allow for multiple rule files, instead of requiring all rules to be within a single file
+* DONE Add compatibility with Linux
 * DONE Add threading for Yara to improve performance
 * DONE Add "Clear Yara Results Table" button in Options
