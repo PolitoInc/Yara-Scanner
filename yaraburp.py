@@ -277,7 +277,7 @@ class BurpExtender(IBurpExtender, ITab, IMessageEditorController, IContextMenuFa
             return
 
         # If the location of the yara executable and rules files are NULL, punt.
-        if yara_rules is None or yara_path is None or yara_rules.size() == 0 or len(yara_path) == 0:
+        if yara_rules is None or yara_path is None or yara_rules.size() == 0 or yara_rules.contains("< None >") or len(yara_path) == 0:
             JOptionPane.showMessageDialog(None, "Error: Please specify the path to the yara executable and rules file in "
                                                 "the options tab.")
             return
