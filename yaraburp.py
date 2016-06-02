@@ -349,16 +349,17 @@ class BurpExtender(IBurpExtender, ITab, IMessageEditorController, IContextMenuFa
                         resp_file = open(resp_filename, "wb")
                         resp_file.write(response)
                         resp_file.close()
-                        yara_resp_output = subprocess.check_output([yara_path, yara_rules, resp_filename])
-                        if yara_resp_output is not None and len(yara_resp_output) > 0:
-                            ruleName = (yara_resp_output.split())[0]
-                            self._lock.acquire()
-                            row = self._log.size()
-                            # TODO: Don't add duplicate items to the table
-                            self._log.add(LogEntry(ruleName, iRequestResponse, self._helpers.analyzeRequest(iRequestResponse).getUrl()))
-                            self.fireTableRowsInserted(row, row)
-                            self._lock.release()
-                            matchCount += 1
+                        for rules in yara_rules:
+                            yara_resp_output = subprocess.check_output([yara_path, rules, resp_filename])
+                            if yara_resp_output is not None and len(yara_resp_output) > 0:
+                                ruleName = (yara_resp_output.split())[0]
+                                self._lock.acquire()
+                                row = self._log.size()
+                                # TODO: Don't add duplicate items to the table
+                                self._log.add(LogEntry(ruleName, iRequestResponse, self._helpers.analyzeRequest(iRequestResponse).getUrl()))
+                                self.fireTableRowsInserted(row, row)
+                                self._lock.release()
+                                matchCount += 1
                     except Exception as e:
                         JOptionPane.showMessageDialog(None, "Error running Yara. Please check your configuration and rules.")
                         return
