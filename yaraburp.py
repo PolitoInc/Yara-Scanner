@@ -12,16 +12,20 @@ from burp import IBurpExtender
 from burp import IContextMenuFactory
 from burp import ITab
 from burp import IMessageEditorController
+from java.io import File
 from java.io import PrintWriter
 from java.lang import Runnable
 from java.lang import System
 from java.lang import Thread
 from java.util import ArrayList
+from java.util import Vector
 from java.awt import GridBagConstraints
 from java.awt import GridBagLayout
 from java.awt.event import ActionListener
 from javax.swing import JButton
+from javax.swing import JFileChooser
 from javax.swing import JLabel
+from javax.swing import JList
 from javax.swing import JMenuItem
 from javax.swing import JOptionPane
 from javax.swing import JPanel
@@ -30,6 +34,8 @@ from javax.swing import JSplitPane
 from javax.swing import JTabbedPane
 from javax.swing import JTable
 from javax.swing import JTextField
+from javax.swing.filechooser import FileFilter
+from javax.swing.filechooser import FileNameExtensionFilter
 from javax.swing.table import AbstractTableModel
 from threading import Lock
 import os
@@ -94,18 +100,27 @@ class BurpExtender(IBurpExtender, ITab, IMessageEditorController, IContextMenuFa
         constraints.gridx = 0
         constraints.gridy = 1
         optionsPanel.add(yara_rules_label, constraints)
-
-        self._yara_rules_txtField = JTextField(25)
+		
+        self._yara_rules_files = Vector()
+        self._yara_rules_files.add("< None >")
+        self._yara_rules_fileList = JList(self._yara_rules_files)
         constraints.fill = GridBagConstraints.HORIZONTAL
         constraints.gridx = 1
         constraints.gridy = 1
-        optionsPanel.add(self._yara_rules_txtField, constraints)
+        optionsPanel.add(self._yara_rules_fileList, constraints)
+        
+        self._yara_rules_select_files_button = JButton("Select Files")
+        self._yara_rules_select_files_button.addActionListener(self)
+        constraints.fill = GridBagConstraints.HORIZONTAL
+        constraints.gridx = 1
+        constraints.gridy = 2
+        optionsPanel.add(self._yara_rules_select_files_button, constraints)
 
         self._yara_clear_button = JButton("Clear Yara Results Table")
         self._yara_clear_button.addActionListener(self)
         constraints.fill = GridBagConstraints.HORIZONTAL
         constraints.gridx = 1
-        constraints.gridy = 2
+        constraints.gridy = 3
         optionsPanel.add(self._yara_clear_button, constraints)
 
         # Tabs with request/response viewers
@@ -173,7 +188,7 @@ class BurpExtender(IBurpExtender, ITab, IMessageEditorController, IContextMenuFa
 
         if actionEvent.getSource() is self.menuItem:
             yara_path = self._yara_exe_txtField.getText()
-            yara_rules = self._yara_rules_txtField.getText()
+            yara_rules = self._yara_rules_files
             t = Thread(self)
             t.start()
         elif actionEvent.getSource() is self._yara_clear_button:
@@ -190,6 +205,19 @@ class BurpExtender(IBurpExtender, ITab, IMessageEditorController, IContextMenuFa
             self._responseViewer.setMessage([], False)
             self._currentlyDisplayedItem = None
             self._lock.release()
+        elif actionEvent.getSource() is self._yara_rules_select_files_button:
+            fileChooser = JFileChooser()
+            yarFilter = FileNameExtensionFilter("Yara Rules", ["yar"])
+            fileChooser.addChoosableFileFilter(yarFilter)
+            fileChooser.setFileFilter(yarFilter)
+            fileChooser.setMultiSelectionEnabled(True)
+            fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY)
+            ret = fileChooser.showOpenDialog(None)
+            if ret == JFileChooser.APPROVE_OPTION:
+                self._yara_rules_files.clear()
+                for file in fileChooser.getSelectedFiles():
+                    self._yara_rules_files.add(file.getPath())
+                self._yara_rules_fileList.setListData(self._yara_rules_files)
         else:
             stdout.println("Unknown Event Received.")
 
@@ -249,8 +277,8 @@ class BurpExtender(IBurpExtender, ITab, IMessageEditorController, IContextMenuFa
             return
 
         # If the location of the yara executable and rules files are NULL, punt.
-        if yara_rules is None or yara_path is None or len(yara_rules) == 0 or len(yara_path) == 0:
-            JOptionPane.showMessageDialog(None, "Error: Please specify the path to the yara executable and rules file in"
+        if yara_rules is None or yara_path is None or yara_rules.size() == 0 or yara_rules.contains("< None >") or len(yara_path) == 0:
+            JOptionPane.showMessageDialog(None, "Error: Please specify the path to the yara executable and rules file in "
                                                 "the options tab.")
             return
 
@@ -291,16 +319,17 @@ class BurpExtender(IBurpExtender, ITab, IMessageEditorController, IContextMenuFa
                         req_file = open(req_filename, "wb")
                         req_file.write(request)
                         req_file.close()
-                        yara_req_output = subprocess.check_output([yara_path, yara_rules, req_filename])
-                        if yara_req_output is not None and len(yara_req_output) > 0:
-                            ruleName = (yara_req_output.split())[0]
-                            self._lock.acquire()
-                            row = self._log.size()
-                            # TODO: Don't add duplicate items to the table
-                            self._log.add(LogEntry(ruleName, iRequestResponse, self._helpers.analyzeRequest(iRequestResponse).getUrl()))
-                            self.fireTableRowsInserted(row, row)
-                            self._lock.release()
-                            matchCount += 1
+                        for rules in yara_rules:
+                            yara_req_output = subprocess.check_output([yara_path, rules, req_filename])
+                            if yara_req_output is not None and len(yara_req_output) > 0:
+                                ruleName = (yara_req_output.split())[0]
+                                self._lock.acquire()
+                                row = self._log.size()
+                                # TODO: Don't add duplicate items to the table
+                                self._log.add(LogEntry(ruleName, iRequestResponse, self._helpers.analyzeRequest(iRequestResponse).getUrl()))
+                                self.fireTableRowsInserted(row, row)
+                                self._lock.release()
+                                matchCount += 1
                     except Exception as e:
                         JOptionPane.showMessageDialog(None, "Error running Yara. Please check your configuration and rules.")
                         return
@@ -320,16 +349,17 @@ class BurpExtender(IBurpExtender, ITab, IMessageEditorController, IContextMenuFa
                         resp_file = open(resp_filename, "wb")
                         resp_file.write(response)
                         resp_file.close()
-                        yara_resp_output = subprocess.check_output([yara_path, yara_rules, resp_filename])
-                        if yara_resp_output is not None and len(yara_resp_output) > 0:
-                            ruleName = (yara_resp_output.split())[0]
-                            self._lock.acquire()
-                            row = self._log.size()
-                            # TODO: Don't add duplicate items to the table
-                            self._log.add(LogEntry(ruleName, iRequestResponse, self._helpers.analyzeRequest(iRequestResponse).getUrl()))
-                            self.fireTableRowsInserted(row, row)
-                            self._lock.release()
-                            matchCount += 1
+                        for rules in yara_rules:
+                            yara_resp_output = subprocess.check_output([yara_path, rules, resp_filename])
+                            if yara_resp_output is not None and len(yara_resp_output) > 0:
+                                ruleName = (yara_resp_output.split())[0]
+                                self._lock.acquire()
+                                row = self._log.size()
+                                # TODO: Don't add duplicate items to the table
+                                self._log.add(LogEntry(ruleName, iRequestResponse, self._helpers.analyzeRequest(iRequestResponse).getUrl()))
+                                self.fireTableRowsInserted(row, row)
+                                self._lock.release()
+                                matchCount += 1
                     except Exception as e:
                         JOptionPane.showMessageDialog(None, "Error running Yara. Please check your configuration and rules.")
                         return
